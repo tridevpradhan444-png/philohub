@@ -1,2 +1,2 @@
 "use client";
-export { default } from "../components/PhiloHub";
+export { default } from "../components/philohub";
