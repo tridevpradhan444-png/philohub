@@ -1130,3 +1130,7 @@ function Section({ title, action, onAction, children, T }) {
     </div>
   );
 }
+
+function NietAI({ T, darkMode, page, activeActivity }) {
+  return null;
+}
