@@ -6,9 +6,13 @@ const BIN_ID = "6a0ece7fee5a733b12f5d1bf";
 const JSONBIN_KEY = "$2a$10$OJZZSYFPcc426UK4.6bAtO/0sydMTnVSl7bbNbr1Z6AI7njOcEW/6";
 
 function getLocal(key, fallback = null) {
+  if (typeof window === "undefined") return fallback;
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
 }
-function setLocal(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
+function setLocal(key, val) { 
+  if (typeof window === "undefined") return;
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {} 
+}
 
 async function getVotes() {
   try {
@@ -30,11 +34,13 @@ function tally(votes) {
   const c = {}; Object.values(votes).forEach(v => { c[v.choice] = (c[v.choice] || 0) + 1; }); return c;
 }
 function fp() {
+  if (typeof window === "undefined") return "server-build";
   const s = [navigator.userAgent, screen.width, screen.height, navigator.language].join("|");
   let h = 0; for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; } return Math.abs(h).toString(36);
 }
 function getSavedUser() { return getLocal("ph-user"); }
 function saveUser(n, e) { setLocal("ph-user", { name: n, email: e }); }
+
 
 // ── DAILY QUOTES ───────────────────────────────────────────────────────────────
 const QUOTES = [
