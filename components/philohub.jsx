@@ -1118,3 +1118,15 @@ function FF({ label, value, onChange, placeholder, type = "text", T }) {
     </div>
   );
 }
+
+function Section({ title, action, onAction, children, T }) {
+  return (
+    <div style={{ marginBottom: "2.5rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+        <h2 style={{ fontWeight: 900, fontSize: "1.15rem", letterSpacing: "-0.03em" }}>{title}</h2>
+        {action && <button onClick={onAction} style={{ background: "transparent", border: "none", color: T.muted, fontSize: "0.78rem", cursor: "pointer", fontFamily: "inherit" }}>{action} →</button>}
+      </div>
+      {children}
+    </div>
+  );
+}
