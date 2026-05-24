@@ -1,5 +1,21 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+
+import dynamic from 'next/dynamic';
+
+// This tells Next.js to completely skip server-side rendering for this component!
+const PhiloHub = dynamic(() => import('../components/philohub'), {
+  ssr: false,
+  loading: () => (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#121212', color: '#fff' }}>
+      Loading PhiloHub...
+    </div>
+  )
+});
+
+export default function Home() {
+  return <PhiloHub />;
+}
+
 
 // ── STORAGE ────────────────────────────────────────────────────────────────────
 const BIN_ID = "6a0ece7fee5a733b12f5d1bf";
