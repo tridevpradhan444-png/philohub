@@ -456,3 +456,304 @@ function ActivitiesPage({ T, activities, voteCounts, onOpen }) {
   );
 }
 
+// ── BOOKS PAGE ─────────────────────────────────────────────────────────────────
+function BooksPage({ T, books, darkMode }) {
+  const [cat, setCat] = useState("All");
+  const [freeOnly, setFreeOnly] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filtered = books.filter(b => {
+    if (cat !== "All" && b.cat !== cat) return false;
+    if (freeOnly && !b.free) return false;
+    if (search && !b.title.toLowerCase().includes(search.toLowerCase()) && !b.author.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  return (
+    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "2rem 1.2rem 4rem", animation: "fadeUp 0.5s ease" }}>
+      <h1 style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.04em", marginBottom: "0.4rem" }}>📚 Books</h1>
+      <p style={{ color: T.muted, marginBottom: "1.5rem" }}>Books that will change how you see the world.</p>
+
+      <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search books or authors..." style={{ width: "100%", background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10, padding: "0.75rem 1rem", fontSize: "0.9rem", color: T.text, outline: "none", marginBottom: "1rem", fontFamily: "inherit" }}
+        onFocus={e => e.target.style.borderColor = T.accent}
+        onBlur={e => e.target.style.borderColor = T.border} />
+
+      <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "0.8rem" }}>
+        {BOOK_CATS.map(c => <button key={c} onClick={() => setCat(c)} style={{ padding: "0.35rem 0.8rem", borderRadius: 999, border: `1px solid ${cat===c?T.accent:T.border}`, background: cat===c?T.accent:"transparent", color: cat===c?"#0a0a0a":T.muted, fontSize: "0.72rem", cursor: "pointer", fontFamily: "inherit", fontWeight: cat===c?700:400, transition: "all 0.15s" }}>{c}</button>)}
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: T.muted, cursor: "pointer" }}>
+          <input type="checkbox" checked={freeOnly} onChange={e => setFreeOnly(e.target.checked)} style={{ accentColor: T.accent }} />
+          Free only
+        </label>
+        <span style={{ color: T.subtle, fontSize: "0.72rem" }}>{filtered.length} books</span>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))", gap: "1.2rem" }}>
+        {filtered.map((b, i) => (
+          <div key={b.id} style={{ animation: `fadeUp 0.4s ease ${(i%12)*30}ms both` }}>
+            <div style={{ borderRadius: 8, overflow: "hidden", marginBottom: "0.6rem", background: T.surface2, height: 200, transition: "transform 0.2s" }}
+              onMouseEnter={e => e.currentTarget.style.transform = "scale(1.04)"}
+              onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
+              <img src={b.cover} alt={b.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.target.style.display="none"; e.target.parentElement.style.background=`linear-gradient(135deg, ${T.surface2}, ${T.border})`; }} />
+            </div>
+            <div style={{ fontWeight: 700, fontSize: "0.8rem", lineHeight: 1.3, marginBottom: "0.2rem" }}>{b.title}</div>
+            <div style={{ fontSize: "0.7rem", color: T.muted, marginBottom: "0.4rem" }}>{b.author}</div>
+            <p style={{ fontSize: "0.7rem", color: T.muted, lineHeight: 1.5, marginBottom: "0.5rem" }}>{b.desc}</p>
+            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+              <a href={b.amazon} target="_blank" rel="noreferrer" style={{ fontSize: "0.65rem", color: "#e67e22", background: "#fef3e2", padding: "0.2rem 0.5rem", borderRadius: 999 }}>🛒 Buy</a>
+              {b.free && <a href={b.free} target="_blank" rel="noreferrer" style={{ fontSize: "0.65rem", color: "#27ae60", background: "#e8f8f0", padding: "0.2rem 0.5rem", borderRadius: 999 }}>📄 Free</a>}
+              <a href={b.wiki} target="_blank" rel="noreferrer" style={{ fontSize: "0.65rem", color: T.muted, background: T.surface2, padding: "0.2rem 0.5rem", borderRadius: 999 }}>Wiki</a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── VIDEOS PAGE ────────────────────────────────────────────────────────────────
+function VideosPage({ T, darkMode }) {
+  const [query, setQuery] = useState("");
+  const [videos, setVideos] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const topics = ["Philosophy explained","Nietzsche","Existentialism","Stoicism","Trolley Problem","Free will","Albert Camus","Buddhism","Nihilism","Plato","Consciousness","Absurdism"];
+
+  async function search(q) {
+    setLoading(true); setQuery(q);
+    const results = await searchYouTube(q);
+    setVideos(results); setLoading(false);
+  }
+
+  useEffect(() => { search("philosophy explained"); }, []);
+
+  return (
+    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "2rem 1.2rem 4rem", animation: "fadeUp 0.5s ease" }}>
+      <h1 style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.04em", marginBottom: "0.4rem" }}>🎬 Videos</h1>
+      <p style={{ color: T.muted, marginBottom: "1.5rem" }}>Philosophy's greatest ideas on YouTube.</p>
+
+      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+        <input value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key==="Enter" && search(query)} placeholder="Search philosophy topics..." style={{ flex: 1, background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10, padding: "0.75rem 1rem", fontSize: "0.9rem", color: T.text, outline: "none", fontFamily: "inherit" }}
+          onFocus={e => e.target.style.borderColor = T.accent}
+          onBlur={e => e.target.style.borderColor = T.border} />
+        <button onClick={() => search(query)} style={{ background: T.accent, color: "#0a0a0a", border: "none", borderRadius: 10, padding: "0.75rem 1.2rem", cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>Search</button>
+      </div>
+
+      <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+        {topics.map(t => <button key={t} onClick={() => search(t)} style={{ padding: "0.3rem 0.7rem", borderRadius: 999, border: `1px solid ${T.border}`, background: "transparent", color: T.muted, fontSize: "0.7rem", cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = T.accent; e.currentTarget.style.color = T.accent; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.muted; }}>{t}</button>)}
+      </div>
+
+      {loading && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: "1rem" }}>
+          {[...Array(6)].map((_, i) => (
+            <div key={i} style={{ borderRadius: 12, overflow: "hidden", background: T.surface }}>
+              <div style={{ height: 150, background: `linear-gradient(90deg, ${T.surface} 0%, ${T.surface2} 50%, ${T.surface} 100%)`, backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }} />
+              <div style={{ padding: "0.8rem" }}>
+                <div style={{ height: 12, background: T.surface2, borderRadius: 4, marginBottom: "0.5rem" }} />
+                <div style={{ height: 10, width: "60%", background: T.surface2, borderRadius: 4 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: "1rem" }}>
+          {videos.map((v, i) => (
+            <a key={v.id?.videoId} href={`https://www.youtube.com/watch?v=${v.id?.videoId}`} target="_blank" rel="noreferrer" style={{ display: "block", background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden", transition: "transform 0.2s", animation: `fadeUp 0.4s ease ${i*40}ms both` }}
+              onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"}
+              onMouseLeave={e => e.currentTarget.style.transform = "none"}>
+              <div style={{ position: "relative", paddingBottom: "56.25%", background: "#000" }}>
+                <img src={v.snippet?.thumbnails?.medium?.url} alt={v.snippet?.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.15)", opacity: 0, transition: "opacity 0.2s" }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = "1"}
+                  onMouseLeave={e => e.currentTarget.style.opacity = "0"}>
+                  <div style={{ width: 48, height: 48, background: "rgba(255,0,0,0.9)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: "1.2rem" }}>▶</div>
+                </div>
+              </div>
+              <div style={{ padding: "0.8rem" }}>
+                <div style={{ fontWeight: 700, fontSize: "0.82rem", color: T.text, lineHeight: 1.4, marginBottom: "0.3rem", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.snippet?.title}</div>
+                <div style={{ fontSize: "0.7rem", color: T.muted }}>{v.snippet?.channelTitle}</div>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+
+      {!loading && videos.length === 0 && (
+        <div style={{ textAlign: "center", padding: "3rem", color: T.muted }}>No videos found. Try a different search!</div>
+      )}
+    </div>
+  );
+}
+
+// ── LEARN PAGE ─────────────────────────────────────────────────────────────────
+function LearnPage({ T, darkMode }) {
+  const [activeSection, setActiveSection] = useState(null);
+  const completed = getLocal("ph-completed", []);
+  const progress = getLocal("ph-lesson-progress", { section: 1, lesson: 1 });
+
+  const sections = [
+    { id: 1, emoji: "🌱", title: "History of Philosophy", subtitle: "How it all began — from fear to Thales to today", lessons: 12, color: "#16a34a" },
+    { id: 2, emoji: "🧠", title: "Schools of Thought", subtitle: "Nihilism, Stoicism, Existentialism & more", lessons: 18, color: "#7c3aed" },
+    { id: 3, emoji: "🎭", title: "Famous Problems & Paradoxes", subtitle: "The greatest thought experiments ever conceived", lessons: 15, color: "#dc2626" },
+    { id: 4, emoji: "❓", title: "Big Questions", subtitle: "Does life have meaning? Is free will real?", lessons: 14, color: "#d97706" },
+    { id: 5, emoji: "👤", title: "Philosopher Deep Dives", subtitle: "Nietzsche, Plato, Buddha, Kant & more", lessons: 20, color: "#0284c7" },
+  ];
+
+  return (
+    <div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem 1.2rem 4rem", animation: "fadeUp 0.5s ease" }}>
+      <h1 style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.04em", marginBottom: "0.4rem" }}>🏛️ Learn Philosophy</h1>
+      <p style={{ color: T.muted, marginBottom: "1.5rem" }}>From the beginning of thought to the questions keeping philosophers up at night.</p>
+
+      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: "1.2rem", marginBottom: "2rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+          <span style={{ fontWeight: 700, fontSize: "0.88rem" }}>Overall Progress</span>
+          <span style={{ color: T.muted, fontSize: "0.78rem" }}>{completed.length} / 79 lessons</span>
+        </div>
+        <div style={{ height: 6, background: T.border, borderRadius: 3, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${(completed.length / 79) * 100}%`, background: `linear-gradient(to right, #16a34a, #0284c7)`, borderRadius: 3, transition: "width 0.5s ease" }} />
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gap: "0.8rem" }}>
+        {sections.map((s, i) => {
+          const isActive = activeSection === s.id;
+          return (
+            <div key={s.id} style={{ animation: `fadeUp 0.5s ease ${i*80}ms both` }}>
+              <div onClick={() => setActiveSection(isActive ? null : s.id)} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1.2rem", background: T.surface, border: `1px solid ${isActive ? s.color : T.border}`, borderRadius: 12, cursor: "pointer", transition: "all 0.2s" }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.borderColor = s.color; }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.borderColor = T.border; }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: `${s.color}20`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.5rem", flexShrink: 0 }}>{s.emoji}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 800, fontSize: "0.95rem", marginBottom: "0.2rem" }}>{s.title}</div>
+                  <div style={{ fontSize: "0.75rem", color: T.muted }}>{s.subtitle} · {s.lessons} lessons</div>
+                </div>
+                <span style={{ color: T.muted, fontSize: "1.2rem", transition: "transform 0.2s", transform: isActive ? "rotate(90deg)" : "none" }}>›</span>
+              </div>
+
+              {isActive && (
+                <div style={{ marginTop: "0.5rem", background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden", animation: "scaleIn 0.2s ease" }}>
+                  {s.id === 1 ? HISTORY_LESSONS.map((l, li) => (
+                    <LessonRow key={l.id} lesson={l} index={li} T={T} sectionColor={s.color} completed={completed} progress={progress} sectionId={s.id} />
+                  )) : Array.from({length: Math.min(s.lessons, 5)}, (_, li) => (
+                    <div key={li} style={{ padding: "0.9rem 1.2rem", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: "0.8rem", opacity: 0.5 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: "50%", background: T.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8rem" }}>🔒</div>
+                      <div style={{ fontSize: "0.82rem", color: T.muted }}>Coming soon...</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const HISTORY_LESSONS = [
+  { id: "h1", title: "Why Philosophy Started", subtitle: "Fear, gods, and one brave question", emoji: "🌅" },
+  { id: "h2", title: "Ancient Greece", subtitle: "Socrates, Plato & Aristotle", emoji: "🏛️" },
+  { id: "h3", title: "Meanwhile in the East", subtitle: "Buddha, Confucius & Lao Tzu", emoji: "🧘" },
+  { id: "h4", title: "Meanwhile in India", subtitle: "Upanishads, Chanakya & Adi Shankaracharya", emoji: "🪔" },
+  { id: "h5", title: "The Dark Ages", subtitle: "When philosophy was suppressed", emoji: "🌑" },
+  { id: "h6", title: "The Renaissance", subtitle: "Philosophy fights back", emoji: "🌅" },
+  { id: "h7", title: "The Enlightenment", subtitle: "Descartes, Kant & Hume", emoji: "💡" },
+  { id: "h8", title: "Revolution!", subtitle: "Marx & Rousseau hit the streets", emoji: "✊" },
+  { id: "h9", title: "The Crisis", subtitle: "Nietzsche — God is dead, now what?", emoji: "⚡" },
+  { id: "h10", title: "Modern Chaos", subtitle: "Sartre, Camus, Kafka", emoji: "😤" },
+  { id: "h11", title: "Today", subtitle: "AI, simulation theory, free will", emoji: "💻" },
+  { id: "h12", title: "Why We Still Need It", subtitle: "The most important answer", emoji: "❓" },
+];
+
+// Lesson content reused from previous version
+const LESSON_CONTENT = {
+  h1: { text: `Humans were terrified.\n\nThunder killed people. Disease wiped out entire villages overnight. The sun disappeared at night and nobody knew if it would come back.\n\nSo they made gods. Gods explained everything. Thunder was Zeus angry. Disease was divine punishment. The sun returned because the priests prayed hard enough.\n\nThis worked for thousands of years. Then around 600 BCE, something almost impossible happened.\n\nA man named Thales looked at a flood and instead of saying "Poseidon is angry" — he said:\n\n"I think everything in the world is made of water."\n\nWrong answer. But the most important moment in human history.\n\nFor the first time, a human tried to explain the world without using gods. Using only observation, reason, and curiosity.\n\nHe was laughed at. He didn't care.\n\nThat stubbornness — that refusal to accept "because a god did it" as a final answer — is where philosophy began.\n\nNot in a library. In the mind of one stubborn man standing in floodwater, asking why.\n\nAfter Thales came Heraclitus: "You cannot step in the same river twice." Then Anaximander, Pythagoras, Parmenides — each building on the last.\n\nThis tradition never stopped. You're reading this because of Thales.`, figures: [{ name: "Thales of Miletus", desc: "600 BCE · First philosopher", emoji: "💧", wiki: "https://en.wikipedia.org/wiki/Thales_of_Miletus" }, { name: "Heraclitus", desc: "535 BCE · Everything flows", emoji: "🔥", wiki: "https://en.wikipedia.org/wiki/Heraclitus" }, { name: "Anaximander", desc: "610 BCE · The infinite origin", emoji: "∞", wiki: "https://en.wikipedia.org/wiki/Anaximander" }], reflection: "If Thales was alive today, what would he question first? What do we accept as true simply because everyone else does?" },
+  h2: { text: `Athens, around 470 BCE. A city buzzing with commerce, democracy, and war.\n\nInto this world came Socrates — the strangest philosopher who ever lived. He wrote nothing. He owned nothing. He walked barefoot through Athens asking questions of everyone he met.\n\nHis method was simple and infuriating: ask someone "What is justice?" They'd answer. He'd ask a follow-up. Their answer would collapse. Eventually they'd admit they had no idea what they were talking about.\n\nThis was the Socratic Method. It made everyone hate him.\n\nIn 399 BCE, he was put on trial for "corrupting the youth." He was 70. He could have escaped. His friends begged him to. He refused. He drank hemlock and died for his principles.\n\nHis student Plato recorded everything. Plato believed the world we see is just a shadow of a more perfect reality — the Theory of Forms.\n\nThen came Aristotle — Plato's student who rejected almost everything his teacher said. He watched, classified, categorized everything from biology to politics. He invented formal logic.\n\nThese three built the foundation of Western thought. Every philosopher since has been responding to them.`, figures: [{ name: "Socrates", desc: "470-399 BCE · The gadfly of Athens", emoji: "🧔", wiki: "https://en.wikipedia.org/wiki/Socrates" }, { name: "Plato", desc: "428-348 BCE · Theory of Forms", emoji: "📜", wiki: "https://en.wikipedia.org/wiki/Plato" }, { name: "Aristotle", desc: "384-322 BCE · Logic & science", emoji: "🔬", wiki: "https://en.wikipedia.org/wiki/Aristotle" }], reflection: "Socrates died rather than abandon his principles. Is there anything you believe in so strongly you'd face serious consequences for it?" },
+  h3: { text: `While Socrates walked barefoot through Athens, something equally extraordinary happened on the other side of the world.\n\nIn India, a prince named Siddhartha Gautama left his palace, saw old age, sickness, and death for the first time, and sat under a tree until he understood the nature of suffering.\n\nHe became the Buddha.\n\nHis insight: suffering exists because we cling to things — possessions, people, our sense of self. Release that clinging, and suffering ends.\n\nAt almost exactly the same time, in China, Confucius walked the roads offering his teachings to any ruler who would listen. Almost none did. He died thinking himself a failure.\n\nHe wasn't. His ideas about relationships, respect, and social harmony became the foundation of Chinese civilization for 2,500 years.\n\nAnd then there was Lao Tzu, who wrote 81 short, cryptic chapters: "The Tao that can be told is not the eternal Tao."\n\nWhere the Greeks wanted to understand and control the world, the Taoists wanted to flow with it.\n\nBoth produced profound wisdom. Independently. Thousands of miles apart. Which tells us: the biggest questions are universal.`, figures: [{ name: "Buddha", desc: "563-483 BCE · The awakened one", emoji: "🧘", wiki: "https://en.wikipedia.org/wiki/Gautama_Buddha" }, { name: "Confucius", desc: "551-479 BCE · Social harmony", emoji: "📜", wiki: "https://en.wikipedia.org/wiki/Confucius" }, { name: "Lao Tzu", desc: "6th century BCE · The Tao", emoji: "☯️", wiki: "https://en.wikipedia.org/wiki/Laozi" }], reflection: "Buddhism says suffering comes from clinging. What are you currently clinging to that might be causing unnecessary pain?" },
+  h4: { text: `India's contribution to philosophy is ancient, vast, and still largely unknown to the Western world.\n\nThe Upanishads — written between 800 and 200 BCE — asked the most profound questions anyone has ever asked: What is the self? What is consciousness? What is the relationship between the individual soul (Atman) and the universal reality (Brahman)?\n\nTheir answer — that Atman and Brahman are ultimately the same — is one of the most radical ideas in human history. You are not separate from reality. You ARE reality, temporarily pretending to be individual.\n\nThen came Chanakya, around 300 BCE. He wrote the Arthashastra — a manual of statecraft so sophisticated it covers foreign policy, market regulation, and intelligence networks. Machiavelli wrote 1800 years later.\n\nAdi Shankaracharya walked the entire Indian subcontinent in the 8th century debating philosophers, and unified diverse strands of Hindu philosophy under Advaita Vedanta (non-dualism). He died at 32. In 32 years, he changed Indian philosophy forever.\n\nAnd B.R. Ambedkar — born into the lowest caste, earned doctorates from Columbia and LSE, wrote India's Constitution — asked: can a society be just while practicing caste discrimination? His answer: no. And he said so with devastating clarity.`, figures: [{ name: "Chanakya", desc: "350-275 BCE · Statecraft & strategy", emoji: "👑", wiki: "https://en.wikipedia.org/wiki/Chanakya" }, { name: "Adi Shankaracharya", desc: "788-820 CE · Non-dualism", emoji: "🪔", wiki: "https://en.wikipedia.org/wiki/Adi_Shankara" }, { name: "B.R. Ambedkar", desc: "1891-1956 · Social justice", emoji: "⚖️", wiki: "https://en.wikipedia.org/wiki/B._R._Ambedkar" }], reflection: "Ambedkar fought an entire system using philosophy and law. Can ideas alone change the world, or does change always require action?" },
+  h5: { text: `After Greek philosophy flourished, something happened that nearly ended the philosophical tradition in Europe.\n\nThe Roman Empire collapsed. The Christian Church rose to power. And for roughly a thousand years, philosophical inquiry in Europe was severely restricted.\n\nIf your philosophy contradicted Church doctrine, you were a heretic. And heretics were burned.\n\nThis didn't kill philosophy entirely. Thomas Aquinas worked brilliantly within the Church's framework, reconciling Aristotle's logic with Christian faith — creating Scholasticism.\n\nBut the free, questioning spirit that Socrates embodied went underground.\n\nMeanwhile, the Islamic world became the guardian of Greek philosophy. Scholars in Baghdad, Cairo, and Cordoba translated Plato and Aristotle into Arabic, added profound insights, and kept rational inquiry burning.\n\nAvicenna's floating man thought experiment anticipated Descartes by 600 years.\n\nThe lesson: knowledge and free inquiry are fragile. They require protection. When powerful institutions decide certain questions must not be asked, those questions tend not to get asked.\n\nThis is why philosophy matters. Because it insists on the right to keep asking.`, figures: [{ name: "Thomas Aquinas", desc: "1225-1274 · Faith meets reason", emoji: "✝️", wiki: "https://en.wikipedia.org/wiki/Thomas_Aquinas" }, { name: "Avicenna (Ibn Sina)", desc: "980-1037 · Islamic philosophy", emoji: "📚", wiki: "https://en.wikipedia.org/wiki/Avicenna" }, { name: "Averroes (Ibn Rushd)", desc: "1126-1198 · Aristotle's commentator", emoji: "🌙", wiki: "https://en.wikipedia.org/wiki/Averroes" }], reflection: "Are there questions today that are effectively forbidden — not by law, but by social pressure? What happens when you ask them?" },
+  h6: { text: `The Renaissance — "rebirth" — began in Italy around the 14th century. What was reborn? The belief that human beings matter. That the human mind can know the world. That life is worth examining.\n\nArtists began painting humans realistically. Scientists began observing nature directly. Philosophers began asking questions forbidden for centuries.\n\nNiccolò Machiavelli wrote The Prince — a brutally honest guide to political power that ignored Christian morality entirely. His argument: rulers must deal with the world as it is, not as it should be. He wasn't evil. He was realistic.\n\nErasmus challenged Church corruption using satire. Thomas More imagined an ideal society called Utopia. Francis Bacon argued knowledge must come from observation, not ancient authorities.\n\nMost importantly, people began to believe something radical: the individual human mind — not the Church, not tradition, not the king — was the proper judge of truth.\n\nThe Renaissance was humanity waking up from a long sleep and looking around with new eyes.`, figures: [{ name: "Niccolò Machiavelli", desc: "1469-1527 · Realpolitik", emoji: "👑", wiki: "https://en.wikipedia.org/wiki/Niccol%C3%B2_Machiavelli" }, { name: "Erasmus", desc: "1466-1536 · Christian humanism", emoji: "✍️", wiki: "https://en.wikipedia.org/wiki/Erasmus" }, { name: "Francis Bacon", desc: "1561-1626 · Scientific method", emoji: "🔬", wiki: "https://en.wikipedia.org/wiki/Francis_Bacon" }], reflection: "The Renaissance challenged the most powerful institution of their time. Who or what would be the equivalent challenge today?" },
+  h7: { text: `By the 17th century, reason was becoming the new religion in Europe.\n\nRené Descartes sat by a fire and decided to doubt everything. Everything. Could he be dreaming? Could an evil demon be deceiving him?\n\nHe doubted until he found something he couldn't doubt: the fact that he was doubting. "I think, therefore I am."\n\nFrom this single certainty, he tried to rebuild all of human knowledge.\n\nThen came David Hume, more radical. He argued we cannot know anything beyond what our senses tell us. Cause and effect? We assume it exists but can't prove it.\n\nHume woke Immanuel Kant from his "dogmatic slumber." Kant responded with the most ambitious philosophical project in history: synthesizing rationalism and empiricism.\n\nHis core insight: space, time, and causality aren't features of the world — they're features of our mind that we impose on the world.\n\nThe Enlightenment believed reason could solve any problem. It wasn't entirely right. But the world it built — with science, democracy, and human rights — is the world we still live in.`, figures: [{ name: "René Descartes", desc: "1596-1650 · I think therefore I am", emoji: "💭", wiki: "https://en.wikipedia.org/wiki/Ren%C3%A9_Descartes" }, { name: "David Hume", desc: "1711-1776 · Radical skepticism", emoji: "🤔", wiki: "https://en.wikipedia.org/wiki/David_Hume" }, { name: "Immanuel Kant", desc: "1724-1804 · The Copernican Revolution", emoji: "⭐", wiki: "https://en.wikipedia.org/wiki/Immanuel_Kant" }], reflection: "Descartes doubted everything until he found something certain. What do you believe that you've never seriously questioned?" },
+  h8: { text: `Philosophy had always been an elite activity. But in the 18th and 19th centuries, it came to the streets.\n\nJean-Jacques Rousseau wrote that civilization corrupts human nature. Natural humans were good. Society — with its inequality and hierarchy — made people selfish.\n\nHis social contract theory: what gives governments the right to rule? Only the general will of the people.\n\nThese ideas literally inspired revolutions. The American Revolution. The French Revolution. When Jefferson wrote "all men are created equal," he was translating Enlightenment philosophy into political reality.\n\nThen came Karl Marx, who watched the Industrial Revolution turning workers into machines and asked: who owns the means of production? Why do a few own everything while millions own nothing?\n\nMarx's prediction that capitalism would be overthrown by workers was wrong in the way he imagined. But his analysis of capitalism's tendency toward inequality has proven remarkably accurate.\n\nPhilosophy went to the streets. And the streets were never the same again.`, figures: [{ name: "Jean-Jacques Rousseau", desc: "1712-1778 · The general will", emoji: "🌿", wiki: "https://en.wikipedia.org/wiki/Jean-Jacques_Rousseau" }, { name: "Karl Marx", desc: "1818-1883 · Historical materialism", emoji: "✊", wiki: "https://en.wikipedia.org/wiki/Karl_Marx" }, { name: "John Stuart Mill", desc: "1806-1873 · Liberty & utilitarianism", emoji: "⚖️", wiki: "https://en.wikipedia.org/wiki/John_Stuart_Mill" }], reflection: "Rousseau believed civilization corrupts us. How much of who you are was shaped by the society you were born into?" },
+  h9: { text: `In 1882, Nietzsche wrote: "God is dead. God remains dead. And we have killed him."\n\nHe didn't mean it literally. He meant the Christian moral framework that had held European civilization together was collapsing. Science and reason had made literal religious belief impossible for educated people.\n\nAnd this, Nietzsche argued, was a catastrophe. Not because God was real, but because without that moral framework, people had no foundation for their values. Without God, what stops the world from descending into nihilism?\n\nNietzsche's answer was the Übermensch — a person who creates their own values rather than inheriting them. Someone with the courage to look at a universe without inherent meaning and say: I will create meaning myself.\n\nAt almost the same time, in Russia, Dostoevsky was wrestling with the same crisis through fiction.\n\nHis character Ivan Karamazov asks: if God does not exist, is everything permitted? Can we have morality without God?\n\nDostoevsky had been arrested, sent to Siberia for four years, subjected to a mock execution. He'd seen what humans were capable of. And out of that came some of the most profound novels ever written.\n\nThe 19th century ended with a crisis. The old answers were broken. The new ones hadn't arrived yet.`, figures: [{ name: "Friedrich Nietzsche", desc: "1844-1900 · God is dead", emoji: "⚡", wiki: "https://en.wikipedia.org/wiki/Friedrich_Nietzsche" }, { name: "Fyodor Dostoevsky", desc: "1821-1881 · The human soul", emoji: "📖", wiki: "https://en.wikipedia.org/wiki/Fyodor_Dostoevsky" }, { name: "Arthur Schopenhauer", desc: "1788-1860 · The will to live", emoji: "😔", wiki: "https://en.wikipedia.org/wiki/Arthur_Schopenhauer" }], reflection: "Nietzsche said we need to create our own values. What values have you actually chosen for yourself, vs. inherited from your family or society?" },
+  h10: { text: `The 20th century was the most violent in human history. Two world wars. The Holocaust. Hiroshima. Philosophers tried to make sense of it.\n\nJean-Paul Sartre wrote from occupied Paris: existence precedes essence. There is no human nature, no God-given purpose. We are "condemned to be free" — we must create ourselves through our choices.\n\nThis sounds terrifying. Sartre meant it to be liberating.\n\nAlbert Camus asked: given that life is absurd — given that we want meaning but the universe gives us none — why not commit suicide?\n\nHis answer was beautiful: we must imagine Sisyphus happy. The rock always rolls back down. But the struggle itself is enough to fill a human heart. Rebel against the absurd. Fight it with everything you have, knowing you'll lose.\n\nFranz Kafka expressed the same anxieties through nightmarish fiction. A man arrested for an unnamed crime. A man transformed into an insect. These weren't just stories — they were the experience of living in alienating, bureaucratic modernity.\n\nSimone de Beauvoir extended existentialism to feminism: one is not born a woman, one becomes one.\n\nThese thinkers didn't offer comfort. They offered something rarer: honesty.`, figures: [{ name: "Jean-Paul Sartre", desc: "1905-1980 · Existence precedes essence", emoji: "🚬", wiki: "https://en.wikipedia.org/wiki/Jean-Paul_Sartre" }, { name: "Albert Camus", desc: "1913-1960 · The absurd rebel", emoji: "🌊", wiki: "https://en.wikipedia.org/wiki/Albert_Camus" }, { name: "Simone de Beauvoir", desc: "1908-1986 · Feminist existentialism", emoji: "✊", wiki: "https://en.wikipedia.org/wiki/Simone_de_Beauvoir" }], reflection: "Camus says we must imagine Sisyphus happy — finding meaning in struggle without guarantee of success. Is there a struggle in your life you could approach this way?" },
+  h11: { text: `We live in the strangest moment in the history of human thought.\n\nArtificial intelligence asks: what is thinking? If a machine produces responses indistinguishable from a human's, is it conscious? Does it have rights?\n\nSurveillance technology asks: how much privacy can we sacrifice for security? Who watches the watchers?\n\nSocial media asks: if you present a curated version of yourself to the world, are you being authentic? Are you living your own life, or an algorithm's idea of what you should want?\n\nNick Bostrom argues we're probably living in a computer simulation. David Chalmers calls consciousness "the hard problem" — we have no idea why physical processes give rise to subjective experience.\n\nDerek Parfit argued that personal identity over time is an illusion — you are not the same person you were ten years ago in any meaningful sense.\n\nThese ideas are not comfortable. But they are alive. And they matter.\n\nWe need philosophy now more than ever, because our technology is changing faster than our wisdom.`, figures: [{ name: "Nick Bostrom", desc: "1973- · Simulation theory", emoji: "💻", wiki: "https://en.wikipedia.org/wiki/Nick_Bostrom" }, { name: "David Chalmers", desc: "1966- · Hard problem of consciousness", emoji: "🧠", wiki: "https://en.wikipedia.org/wiki/David_Chalmers" }, { name: "Derek Parfit", desc: "1942-2017 · Personal identity", emoji: "🪞", wiki: "https://en.wikipedia.org/wiki/Derek_Parfit" }], reflection: "Which modern technology raises the most interesting philosophical questions for you? What question does it force you to ask?" },
+  h12: { text: `Here is the honest answer to why we still need philosophy.\n\nNot because it gives us answers. Philosophy gives very few final answers.\n\nWe need it because every major problem facing humanity right now is a philosophy problem dressed up as technology, politics, or economics.\n\nClimate change is not a scientific problem — the science is settled. It's a philosophy problem: what do we owe future generations? How do we weigh present comfort against future catastrophe?\n\nArtificial intelligence is not an engineering problem. It's a philosophy problem: what is consciousness? Can machines suffer? Who is responsible when an algorithm makes a catastrophic decision?\n\nInequality is not an economics problem. It's a philosophy problem: is extreme inequality unjust? Do people deserve what they earn?\n\nEvery answer requires philosophical reasoning. Every policy contains hidden assumptions about human nature, justice, and freedom. Those assumptions need to be examined.\n\nPhilosophy teaches you to examine them.\n\nAnd beyond the grand problems of civilization, there's this: philosophy is the only discipline that asks you to examine your own life. Your values. Your assumptions. Your reasoning.\n\nSocrates said the unexamined life is not worth living. Not because he was being dramatic. Because he meant it.\n\nYou have one life. It deserves to be examined.\n\nThat's why philosophy started. That's why it continues. And that's why you're here.`, figures: [{ name: "Peter Singer", desc: "1946- · Practical ethics", emoji: "🌍", wiki: "https://en.wikipedia.org/wiki/Peter_Singer" }, { name: "Martha Nussbaum", desc: "1947- · Capabilities approach", emoji: "📚", wiki: "https://en.wikipedia.org/wiki/Martha_Nussbaum" }, { name: "Noam Chomsky", desc: "1928- · Language & power", emoji: "🗣️", wiki: "https://en.wikipedia.org/wiki/Noam_Chomsky" }], reflection: "After everything you've read: what is one assumption about yourself or the world that you're now less sure about? What will you do with that uncertainty?" },
+};
+
+function LessonRow({ lesson, index, T, sectionColor, completed, progress, sectionId }) {
+  const [open, setOpen] = useState(false);
+  const isCompleted = completed.includes(lesson.id);
+  const isCurrent = progress.section === sectionId && progress.lesson === index + 1;
+
+  function markComplete() {
+    const c = getLocal("ph-completed", []);
+    if (!c.includes(lesson.id)) {
+      setLocal("ph-completed", [...c, lesson.id]);
+      setLocal("ph-lesson-progress", { section: sectionId, lesson: index + 2 });
+    }
+  }
+
+return (
+    <div style={{ borderBottom: `1px solid ${T.border}` }}>
+      <div onClick={() => setOpen(!open)} style={{ padding: "1rem 1.2rem", display: "flex", alignItems: "center", gap: "0.8rem", cursor: "pointer", transition: "background 0.15s" }}
+        onMouseEnter={e => e.currentTarget.style.background = T.surface2}
+        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+        <div style={{ width: 32, height: 32, borderRadius: "50%", background: isCompleted ? `${sectionColor}20` : T.surface2, border: isCompleted ? `2px solid ${sectionColor}` : isCurrent ? `2px solid ${sectionColor}` : "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem", flexShrink: 0, color: sectionColor }}>
+          {isCompleted ? "✓" : lesson.emoji}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: "0.88rem" }}>{lesson.title}</div>
+          <div style={{ fontSize: "0.72rem", color: T.muted }}>{lesson.subtitle}</div>
+        </div>
+        {isCurrent && <span style={{ fontSize: "0.62rem", color: sectionColor, background: `${sectionColor}20`, padding: "0.15rem 0.5rem", borderRadius: 999, fontWeight: 600 }}>Current</span>}
+        <span style={{ color: T.muted, transition: "transform 0.2s", transform: open ? "rotate(90deg)" : "none" }}>›</span>
+      </div>
+
+      {open && (
+        <div style={{ padding: "1.2rem", background: T.surface2, animation: "scaleIn 0.2s ease" }}>
+          {LESSON_CONTENT[lesson.id] ? (
+            <>
+              <div style={{ fontSize: "0.9rem", lineHeight: 1.9, color: T.text, whiteSpace: "pre-line", marginBottom: "1.5rem" }}>{LESSON_CONTENT[lesson.id].text}</div>
+              {LESSON_CONTENT[lesson.id].figures && (
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <div style={{ fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: "0.8rem" }}>Key Figures</div>
+                  <div style={{ display: "grid", gap: "0.5rem" }}>
+                    {LESSON_CONTENT[lesson.id].figures.map(f => (
+                      <a key={f.name} href={f.wiki} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: "0.8rem", padding: "0.7rem", background: T.surface, borderRadius: 8, textDecoration: "none" }}>
+                        <div style={{ width: 36, height: 36, borderRadius: "50%", background: `${sectionColor}20`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", flexShrink: 0 }}>{f.emoji}</div>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: "0.82rem", color: T.text }}>{f.name}</div>
+                          <div style={{ fontSize: "0.68rem", color: T.muted }}>{f.desc} · Wikipedia →</div>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {LESSON_CONTENT[lesson.id].reflection && (
+                <div style={{ padding: "1rem", background: `${sectionColor}10`, borderRadius: 8, marginBottom: "1.2rem", borderLeft: `3px solid ${sectionColor}` }}>
+                  <div style={{ fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase", color: sectionColor, marginBottom: "0.4rem" }}>Reflection</div>
+                  <p style={{ fontSize: "0.85rem", color: T.text, fontStyle: "italic" }}>{LESSON_CONTENT[lesson.id].reflection}</p>
+                </div>
+              )}
+              {!isCompleted ? (
+                <button onClick={markComplete} style={{ background: sectionColor, color: "#fff", border: "none", borderRadius: 8, padding: "0.65rem 1.5rem", fontSize: "0.82rem", cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>Mark Complete ✓</button>
+              ) : (
+                <div style={{ fontSize: "0.82rem", color: sectionColor, fontWeight: 600 }}>✓ Completed</div>
+              )}
+            </>
+          ) : (
+            <p style={{ color: T.muted, fontSize: "0.85rem" }}>Content coming soon...</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
