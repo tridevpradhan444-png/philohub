@@ -757,3 +757,365 @@ return (
   );
 }
 
+// ── ACTIVITY PAGE ──────────────────────────────────────────────────────────────
+function ActivityPage({ T, activity: d, onBack, onVoted, allActivities, onOpen, savedUser, onUserSaved, darkMode }) {
+  const [phase, setPhase] = useState("loading");
+  const [name, setName] = useState(savedUser?.name || "");
+  const [email, setEmail] = useState(savedUser?.email || "");
+  const [formErr, setFormErr] = useState("");
+  const [pending, setPending] = useState(null);
+  const [choice, setChoice] = useState(null);
+  const [votes, setVotes] = useState({});
+  const [myPrevVote, setMyPrevVote] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setName(savedUser?.name || ""); setEmail(savedUser?.email || ""); }, [savedUser]);
+  useEffect(() => {
+    (async () => {
+      const v = await getDilemmaVotes(d.id);
+      setVotes(v);
+      const f = fp();
+      if (v[f]) { setMyPrevVote(v[f]); setChoice(v[f].choice); setPhase("result"); }
+      else setPhase("intro");
+    })();
+  }, [d.id]);
+
+  function handlePick(opt) { setPending(opt.id); if (savedUser) setPhase("confirm"); else setPhase("form"); }
+  function handleForm() {
+    if (!name.trim()) { setFormErr("Please enter your name."); return; }
+    if (!/^[^\s@]+@gmail\.com$/i.test(email.trim())) { setFormErr("Please enter a valid Gmail."); return; }
+    setFormErr(""); onUserSaved(name.trim(), email.trim().toLowerCase()); setPhase("confirm");
+  }
+  async function handleVote() {
+    setSaving(true);
+    const n = savedUser?.name || name.trim(); const e = savedUser?.email || email.trim().toLowerCase();
+    const newVotes = await castVote(d.id, n, e, pending);
+    setVotes(newVotes); setChoice(pending); onVoted(newVotes); setPhase("result"); setSaving(false);
+  }
+
+  const tallied = tally(votes);
+  const total = Object.values(tallied).reduce((a, b) => a + b, 0);
+  const others = allActivities.filter(x => x.id !== d.id).sort(() => Math.random() - 0.5).slice(0, 3);
+
+  if (phase === "loading") return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}><p style={{ color: T.muted }}>Loading...</p></div>;
+return (
+    <div style={{ minHeight: "100vh", animation: "fadeIn 0.4s ease" }}>
+      {/* Hero */}
+      <div style={{ position: "relative", height: 220, background: d.bg, overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 40%, rgba(10,10,10,0.9) 100%)" }} />
+        <button onClick={onBack} style={{ position: "absolute", top: 16, left: 16, background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", borderRadius: 8, padding: "0.4rem 0.8rem", cursor: "pointer", fontSize: "0.82rem", backdropFilter: "blur(8px)", fontFamily: "inherit" }}>← Back</button>
+        <div style={{ position: "absolute", bottom: "1.5rem", left: "1.5rem" }}>
+          <div style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.6)", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "0.3rem" }}>{d.tag}</div>
+          <h1 style={{ fontSize: "clamp(1.5rem,4vw,2.2rem)", fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>{d.emoji} {d.title}</h1>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 700, margin: "0 auto", padding: "1.5rem 1.2rem 4rem" }}>
+        {/* Explanation */}
+        <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: "1.5rem", marginBottom: "1.5rem" }}>
+          <div style={{ fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase", color: d.color, marginBottom: "0.8rem", fontWeight: 600 }}>The Scenario</div>
+          <div style={{ fontSize: "0.92rem", lineHeight: 1.9, color: T.text, whiteSpace: "pre-line" }}>{d.explanation}</div>
+        </div>
+
+        {/* Voting */}
+        {phase === "intro" && (
+          <div style={{ animation: "fadeUp 0.4s ease" }}>
+            <h3 style={{ fontWeight: 800, fontSize: "1.1rem", marginBottom: "1.2rem" }}>What would you choose?</h3>
+            {savedUser && <div style={{ background: T.surface2, borderRadius: 8, padding: "0.6rem 1rem", marginBottom: "1rem", fontSize: "0.75rem", color: T.muted }}>Voting as <strong style={{ color: T.text }}>{savedUser.name}</strong></div>}
+            {d.uiType === "boxes" ? <BoxUI d={d} onPick={handlePick} T={T} /> :
+              d.uiType === "lever" ? <LeverUI d={d} onPick={handlePick} T={T} /> :
+              d.uiType === "cards" ? <CardsUI d={d} onPick={handlePick} T={T} /> :
+              <ButtonsUI d={d} onPick={handlePick} T={T} />}
+          </div>
+        )}
+
+        {phase === "form" && (
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: "1.5rem", animation: "fadeUp 0.4s ease" }}>
+            <h3 style={{ fontWeight: 800, fontSize: "1rem", marginBottom: "0.3rem" }}>Quick intro</h3>
+            <p style={{ color: T.muted, fontSize: "0.82rem", marginBottom: "1.2rem" }}>Just once — we'll remember you for all future votes.</p>
+            <FF label="Your Name" value={name} onChange={setName} placeholder="e.g. Rahul Sharma" T={T} />
+            <FF label="Gmail" value={email} onChange={setEmail} placeholder="you@gmail.com" type="email" T={T} />
+            {formErr && <p style={{ color: "#dc2626", fontSize: "0.78rem", marginBottom: "0.8rem" }}>⚠ {formErr}</p>}
+            <div style={{ display: "flex", gap: "0.7rem" }}>
+              <Btn bg={d.color} color="#fff" onClick={handleForm}>Continue {d.options.find(o=>o.id===pending)?.emoji}</Btn>
+              <Btn bg="transparent" color={T.muted} border={T.border} onClick={() => setPhase("intro")}>← Back</Btn>
+            </div>
+          </div>
+        )}
+
+        {phase === "confirm" && (
+          <div style={{ background: T.surface, border: `2px solid ${d.color}`, borderRadius: 12, padding: "2rem", textAlign: "center", animation: "fadeUp 0.4s ease" }}>
+            <div style={{ fontSize: "3rem", marginBottom: "0.6rem" }}>{d.options.find(o=>o.id===pending)?.emoji}</div>
+            <h3 style={{ fontWeight: 800, fontSize: "1.2rem", marginBottom: "0.4rem" }}>Choosing: <span style={{ color: d.color }}>{d.options.find(o=>o.id===pending)?.label}</span></h3>
+            <p style={{ color: T.muted, fontSize: "0.85rem", marginBottom: "0.4rem" }}>{d.options.find(o=>o.id===pending)?.desc}</p>
+            <p style={{ color: T.subtle, fontSize: "0.72rem", marginBottom: "1.5rem" }}>Voting as <strong style={{ color: T.muted }}>{savedUser?.name || name}</strong> · One vote per device forever.</p>
+            <div style={{ display: "flex", gap: "0.8rem", justifyContent: "center", flexWrap: "wrap" }}>
+              <Btn bg={d.color} color="#fff" onClick={handleVote}>{saving ? "Saving..." : "Yes, lock in ✓"}</Btn>
+              <Btn bg="transparent" color={T.muted} border={T.border} onClick={() => setPhase("intro")}>Go back</Btn>
+            </div>
+          </div>
+        )}
+
+        {phase === "result" && (
+          <div style={{ animation: "fadeUp 0.5s ease" }}>
+            {myPrevVote && <div style={{ background: T.surface2, borderRadius: 8, padding: "0.7rem 1rem", marginBottom: "1rem", fontSize: "0.78rem", color: T.muted }}>You already voted as <strong>{myPrevVote.name}</strong>.</div>}
+            <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: "1.5rem", marginBottom: "1rem" }}>
+              <div style={{ fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase", color: d.color, marginBottom: "0.2rem", fontWeight: 600 }}>Your choice</div>
+              <h2 style={{ fontSize: "1.8rem", fontWeight: 900, marginBottom: "0.3rem", letterSpacing: "-0.03em" }}>{d.options.find(o=>o.id===choice)?.emoji} {d.options.find(o=>o.id===choice)?.label}</h2>
+              <p style={{ color: T.muted, fontSize: "0.85rem", marginBottom: "1.5rem" }}>{d.options.find(o=>o.id===choice)?.desc}</p>
+              <div style={{ fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", color: T.subtle, marginBottom: "1rem" }}>Global Results · {total} votes</div>
+              {d.options.map(opt => {
+                const count = tallied[opt.id] || 0;
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                const isChosen = opt.id === choice;
+                return (
+                  <div key={opt.id} style={{ marginBottom: "1rem" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.3rem" }}>
+                      <span style={{ fontSize: "0.88rem", fontWeight: isChosen ? 700 : 400, color: isChosen ? d.color : T.muted }}>{opt.emoji} {opt.label} {isChosen && "← you"}</span>
+                      <span style={{ fontWeight: 700 }}>{pct}%</span>
+                    </div>
+                    <div style={{ height: 8, background: T.border, borderRadius: 999, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${pct}%`, background: isChosen ? d.color : T.border, borderRadius: 999, transition: "width 1.2s ease" }} />
+                    </div>
+                    <div style={{ fontSize: "0.68rem", color: T.subtle, marginTop: "0.15rem" }}>{count} votes</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+{/* Wiki */}
+        <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: "1.5rem", marginTop: "1.5rem" }}>
+          <div style={{ fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase", color: d.color, marginBottom: "1rem", fontWeight: 600 }}>📖 The Philosophy Behind It</div>
+          <div style={{ fontSize: "0.9rem", lineHeight: 1.9, color: T.muted, whiteSpace: "pre-line" }}>{d.wiki}</div>
+        </div>
+
+        {/* More */}
+        <div style={{ marginTop: "2rem" }}>
+          <h3 style={{ fontWeight: 800, fontSize: "1rem", marginBottom: "1rem" }}>More activities</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: "0.8rem" }}>
+            {others.map(o => (
+              <div key={o.id} onClick={() => onOpen(o)} style={{ position: "relative", borderRadius: 10, overflow: "hidden", height: 120, cursor: "pointer", transition: "transform 0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.transform = "scale(1.03)"}
+                onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
+                <div style={{ position: "absolute", inset: 0, background: o.bg }} />
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)" }} />
+                <div style={{ position: "absolute", bottom: 0, left: 0, padding: "0.7rem" }}>
+                  <div style={{ fontWeight: 800, fontSize: "0.78rem", color: "#fff" }}>{o.title}</div>
+                  <div style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.6)" }}>{o.tag}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── CHOICE UIs ─────────────────────────────────────────────────────────────────
+function ButtonsUI({ d, onPick, T }) {
+  const [hov, setHov] = useState(null);
+  return (
+    <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+      {d.options.map(opt => (
+        <button key={opt.id} onClick={() => onPick(opt)} onMouseEnter={() => setHov(opt.id)} onMouseLeave={() => setHov(null)} style={{ flex: 1, minWidth: 160, padding: "1.4rem 1rem", border: `2px solid ${hov===opt.id?d.color:T.border}`, borderRadius: 12, background: hov===opt.id?`${d.color}15`:T.surface, cursor: "pointer", textAlign: "center", fontFamily: "inherit", transition: "all 0.15s", transform: hov===opt.id?"translateY(-3px)":"none", boxShadow: hov===opt.id?`0 8px 24px ${d.color}30`:"none" }}>
+          <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>{opt.emoji}</div>
+          <div style={{ fontWeight: 800, fontSize: "0.95rem", marginBottom: "0.2rem", color: T.text }}>{opt.label}</div>
+          <div style={{ fontSize: "0.78rem", color: T.muted, lineHeight: 1.5 }}>{opt.desc}</div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function BoxUI({ d, onPick, T }) {
+  const [hov, setHov] = useState(null);
+  return (
+    <div>
+      <p style={{ color: T.muted, fontSize: "0.85rem", marginBottom: "1.2rem" }}>Box A always has ₹1,000. Box B is a mystery — depends on what the Predictor thinks you'll do.</p>
+      <div style={{ display: "flex", gap: "1.5rem", justifyContent: "center", marginBottom: "1.2rem", flexWrap: "wrap" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 120, height: 120, border: "2px dashed #aaa", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: T.surface2, fontSize: "0.85rem", color: T.accent, fontWeight: 700 }}>₹1,000<br /><span style={{ fontSize: "0.62rem", color: T.muted }}>guaranteed</span></div>
+          <div style={{ marginTop: "0.4rem", fontSize: "0.72rem", color: T.muted }}>Box A</div>
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <div onMouseEnter={() => setHov("B")} onMouseLeave={() => setHov(null)} style={{ width: 120, height: 120, border: `2px solid ${T.accent}`, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: hov==="B"?`${T.accent}15`:T.surface, cursor: "pointer", transition: "all 0.2s", fontSize: "2rem" }}>{hov==="B"?"❓":"📦"}</div>
+          <div style={{ marginTop: "0.4rem", fontSize: "0.72rem", color: T.muted }}>Box B</div>
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+        {d.options.map(opt => (
+          <button key={opt.id} onClick={() => onPick(opt)} style={{ flex: 1, minWidth: 160, padding: "1.1rem", border: `2px solid ${T.border}`, borderRadius: 12, background: T.surface, cursor: "pointer", fontFamily: "inherit", textAlign: "center", transition: "all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = T.accent; e.currentTarget.style.transform = "translateY(-2px)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.transform = "none"; }}>
+            <div style={{ fontSize: "1.5rem", marginBottom: "0.3rem" }}>{opt.emoji}</div>
+            <div style={{ fontWeight: 700, fontSize: "0.9rem", marginBottom: "0.2rem", color: T.text }}>{opt.label}</div>
+            <div style={{ fontSize: "0.75rem", color: T.muted }}>{opt.desc}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LeverUI({ d, onPick, T }) {
+  const [pulled, setPulled] = useState(false);
+  return (
+    <div>
+      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: "1.5rem", marginBottom: "1.2rem", textAlign: "center" }}>
+        <div style={{ position: "relative", height: 70 }}>
+          <div style={{ position: "absolute", left: 0, right: 0, height: 3, background: T.border, top: "50%" }} />
+          <div style={{ position: "absolute", left: "42%", width: "25%", height: 3, background: pulled?"#dc2626":T.border, top: "22%", transform: "rotate(-15deg)", transition: "background 0.3s" }} />
+          <div style={{ position: "absolute", right: "5%", display: "flex", gap: 2 }}>{[...Array(5)].map((_,i)=><span key={i} style={{fontSize:"1rem"}}>🧍</span>)}</div>
+          <div style={{ position: "absolute", right: "28%", top: "5%" }}><span style={{fontSize:"1rem"}}>🧍</span></div>
+          <span style={{ fontSize: "1.5rem", position: "absolute", left: "8%" }}>🚃</span>
+          <div onClick={() => setPulled(!pulled)} style={{ position: "absolute", left: "40%", cursor: "pointer", fontSize: "1.5rem", transform: pulled?"rotate(-30deg)":"none", transition: "transform 0.3s", userSelect: "none" }}>🔧</div>
+        </div>
+        <p style={{ fontSize: "0.7rem", color: T.subtle, marginTop: "0.5rem" }}>Tap 🔧 to move the lever</p>
+      </div>
+      <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+        {d.options.map(opt => (
+          <button key={opt.id} onClick={() => onPick(opt)} style={{ flex: 1, minWidth: 160, padding: "1.1rem", border: `2px solid ${T.border}`, borderRadius: 12, background: T.surface, cursor: "pointer", fontFamily: "inherit", textAlign: "center", transition: "all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#1e40af"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.transform = "none"; }}>
+            <div style={{ fontSize: "1.5rem", marginBottom: "0.3rem" }}>{opt.emoji}</div>
+            <div style={{ fontWeight: 700, fontSize: "0.9rem", marginBottom: "0.2rem", color: T.text }}>{opt.label}</div>
+            <div style={{ fontSize: "0.75rem", color: T.muted }}>{opt.desc}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CardsUI({ d, onPick, T }) {
+  return (
+    <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+      {d.options.map(opt => (
+        <div key={opt.id} onClick={() => onPick(opt)} style={{ flex: 1, minWidth: 180, padding: "1.5rem", border: `2px solid ${T.border}`, borderRadius: 12, background: T.surface, cursor: "pointer", transition: "all 0.15s" }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "#059669"; e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(5,150,105,0.2)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
+          <div style={{ fontSize: "2.5rem", marginBottom: "0.8rem" }}>{opt.emoji}</div>
+          <div style={{ fontWeight: 800, fontSize: "1rem", marginBottom: "0.4rem", color: T.text }}>{opt.label}</div>
+          <div style={{ fontSize: "0.8rem", color: T.muted, lineHeight: 1.6 }}>{opt.desc}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── NIET AI ────────────────────────────────────────────────────────────────────
+function NietAI({ T, darkMode, page, activeActivity }) {
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const endRef = useRef(null);
+
+  const pageContext = page === "activity" && activeActivity
+    ? `User is viewing "${activeActivity.title}" — ${activeActivity.shortDesc}`
+    : `User is on the ${page} page of PhiloHub — a philosophy platform.`;
+
+  useEffect(() => {
+    if (open && messages.length === 0) {
+      const greeting = page === "activity" && activeActivity
+        ? `Hey! I'm Niet 🤖 You're looking at "${activeActivity.title}". Ask me anything about it!`
+        : `Hey! I'm Niet 🤖 Your philosophy guide. Ask me anything!`;
+      setMessages([{ role: "ai", text: greeting }]);
+    }
+  }, [open]);
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  async function send() {
+    if (!input.trim() || loading) return;
+    const q = input.trim(); setInput("");
+    setMessages(prev => [...prev, { role: "user", text: q }]);
+    setLoading(true);
+    const reply = await askNiet(q, pageContext);
+    setMessages(prev => [...prev, { role: "ai", text: reply }]);
+    setLoading(false);
+  }
+
+  return (
+    <>
+      <button onClick={() => setOpen(!open)} style={{ position: "fixed", bottom: 20, right: 20, zIndex: 150, width: 56, height: 56, borderRadius: "50%", background: open ? T.accent : T.surface, border: `2px solid ${T.border}`, boxShadow: "0 4px 20px rgba(0,0,0,0.3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem", animation: open ? "none" : "float 3s ease infinite", transition: "all 0.2s" }}
+        onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
+        onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
+        🤖
+      </button>
+
+      {open && (
+        <div style={{ position: "fixed", bottom: 84, right: 16, zIndex: 149, width: "min(360px,calc(100vw-32px))", background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, boxShadow: "0 8px 32px rgba(0,0,0,0.3)", overflow: "hidden", animation: "scaleIn 0.2s ease" }}>
+          <div style={{ padding: "0.9rem 1rem", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: T.surface2 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: `${T.accent}20`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem" }}>🤖</div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: "0.88rem" }}>Niet</div>
+                <div style={{ fontSize: "0.62rem", color: T.muted }}>Your philosophy guide</div>
+              </div>
+            </div>
+            <button onClick={() => setOpen(false)} style={{ background: "transparent", border: "none", color: T.muted, cursor: "pointer", fontSize: "1.1rem" }}>✕</button>
+          </div>
+
+          <div style={{ height: 260, overflowY: "auto", padding: "0.8rem" }}>
+            {messages.map((m, i) => (
+              <div key={i} style={{ marginBottom: "0.7rem", display: "flex", justifyContent: m.role==="user"?"flex-end":"flex-start" }}>
+                <div style={{ maxWidth: "85%", padding: "0.6rem 0.9rem", borderRadius: m.role==="user"?"12px 12px 2px 12px":"12px 12px 12px 2px", background: m.role==="user"?T.accent:T.surface2, color: m.role==="user"?"#0a0a0a":T.text, fontSize: "0.83rem", lineHeight: 1.6 }}>
+                  {m.text}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div style={{ display: "flex", gap: "0.3rem", padding: "0.4rem 0.8rem" }}>
+                {[0,1,2].map(i => <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: T.muted, animation: `pulse 1s ease ${i*0.2}s infinite` }} />)}
+              </div>
+            )}
+            <div ref={endRef} />
+          </div>
+
+          <div style={{ padding: "0.7rem", borderTop: `1px solid ${T.border}`, display: "flex", gap: "0.5rem" }}>
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key==="Enter" && send()} placeholder="Ask Niet anything..." style={{ flex: 1, background: T.surface2, border: `1px solid ${T.border}`, borderRadius: 8, padding: "0.5rem 0.8rem", fontSize: "0.82rem", color: T.text, outline: "none", fontFamily: "inherit" }} />
+            <button onClick={send} disabled={loading} style={{ background: T.accent, color: "#0a0a0a", border: "none", borderRadius: 8, padding: "0.5rem 0.9rem", cursor: "pointer", fontWeight: 700, fontSize: "0.9rem" }}>→</button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── SHARED ─────────────────────────────────────────────────────────────────────
+function Section({ title, action, onAction, children, T }) {
+  return (
+    <div style={{ marginBottom: "2.5rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+        <h2 style={{ fontWeight: 900, fontSize: "1.15rem", letterSpacing: "-0.03em" }}>{title}</h2>
+        {action && <button onClick={onAction} style={{ background: "transparent", border: "none", color: T.muted, fontSize: "0.78rem", cursor: "pointer", fontFamily: "inherit" }}>{action} →</button>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Btn({ onClick, children, bg, color, border }) {
+  return (
+    <button onClick={onClick} style={{ background: bg, color, border: border?`1px solid ${border}`:"none", borderRadius: 8, padding: "0.65rem 1.3rem", fontSize: "0.85rem", cursor: "pointer", fontFamily: "inherit", fontWeight: 700, transition: "opacity 0.15s" }}
+      onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+      onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+      {children}
+    </button>
+  );
+}
+
+function FF({ label, value, onChange, placeholder, type = "text", T }) {
+  return (
+    <div style={{ marginBottom: "1rem" }}>
+      <label style={{ display: "block", fontSize: "0.68rem", color: T.muted, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.3rem" }}>{label}</label>
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{ width: "100%", border: `1px solid ${T.border}`, borderRadius: 8, padding: "0.65rem 0.9rem", fontSize: "0.9rem", fontFamily: "inherit", outline: "none", background: T.surface2, color: T.text }}
+        onFocus={e => e.target.style.borderColor = T.accent}
+        onBlur={e => e.target.style.borderColor = T.border} />
+    </div>
+  );
+}
