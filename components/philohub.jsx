@@ -1,19 +1,28 @@
 "use client";
 
-import dynamic from 'next/dynamic';
-
-// This tells Next.js to completely skip server-side rendering for this component!
-const PhiloHub = dynamic(() => import('../components/philohub'), {
-  ssr: false,
-  loading: () => (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#121212', color: '#fff' }}>
-      Loading PhiloHub...
-    </div>
-  )
-});
+import React, { useEffect, useState } from 'react';
 
 export default function Home() {
-  return <PhiloHub />;
+  const [Rendered, setRendered] = useState(false);
+  const [Component, setComponent] = useState(null);
+
+  useEffect(() => {
+    // This ONLY runs on your phone/browser, never on Vercel's server!
+    import('../components/philohub').then((mod) => {
+      setComponent(() => mod.default);
+      setRendered(true);
+    });
+  }, []);
+
+  if (!rendered || !Component) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0a0a0a', color: '#fff' }}>
+        Loading...
+      </div>
+    );
+  }
+
+  return <Component />;
 }
 
 
