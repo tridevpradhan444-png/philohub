@@ -42,6 +42,7 @@ function getSavedUser() { return getLocal("ph-user"); }
 function saveUser(n, e) { setLocal("ph-user", { name: n, email: e }); }
 
 
+
 // ── DAILY QUOTES ───────────────────────────────────────────────────────────────
 const QUOTES = [
   { q: "God is dead. God remains dead. And we have killed him.", a: "Friedrich Nietzsche", s: "The Gay Science", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Nietzsche187a.jpg/440px-Nietzsche187a.jpg" },
