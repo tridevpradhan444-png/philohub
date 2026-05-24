@@ -1,5 +1,5 @@
 "use client";
-export { default } from "../components/philohub";
+import { useState, useEffect, useRef } from "react";
 
 // ── STORAGE ────────────────────────────────────────────────────────────────────
 const BIN_ID = "6a0ece7fee5a733b12f5d1bf";
