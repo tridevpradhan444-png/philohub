@@ -364,11 +364,11 @@ function HomePage({ T, darkMode, activities, books, voteCounts, onNavigate }) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: "1rem" }}>
             {trending.map((a, i) => {
               const total = voteCounts[a.id] ? Object.values(voteCounts[a.id]).reduce((x,y)=>x+y,0) : 0;
-              return (
-                <div key={a.id} onClick={() => onNavigate("activity", a)} style={{ position: "relative", borderRadius: 14, overflow: "hidden", cursor: "pointer", height: 180, animation: `fadeUp 0.5s ease ${i*80}ms both` }}
+                            return (
+                <div key={a.id} onClick={() => onNavigate("activity", a)} 
                   onMouseEnter={e => { e.currentTarget.querySelector(".overlay").style.opacity = "1"; e.currentTarget.style.transform = "scale(1.02)"; }}
                   onMouseLeave={e => { e.currentTarget.querySelector(".overlay").style.opacity = "0"; e.currentTarget.style.transform = "scale(1)"; }}
-                  style={{ transition: "transform 0.2s ease", borderRadius: 14, overflow: "hidden", cursor: "pointer", height: 180, animation: `fadeUp 0.5s ease ${i * 80}ms both` }}>
+                  style={{ position: "relative", transition: "transform 0.2s ease", borderRadius: 14, overflow: "hidden", cursor: "pointer", height: 180, animation: `fadeUp 0.5s ease ${i*80}ms both` }}>
 
                   <div style={{ position: "absolute", inset: 0, background: a.bg }} />
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)" }} />
