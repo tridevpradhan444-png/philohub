@@ -389,13 +389,13 @@ function HomePage({ T, darkMode, activities, books, voteCounts, onNavigate }) {
 
 {/* Featured Books */}
         <Section title="📚 Featured Books" action="See all" onAction={() => onNavigate("books")} T={T}>
-          <div style={{ display: "flex", gap: "1rem", overflowX: "auto", paddingBottom: "0.5rem", scrollbarWidth: "none" }}>
+                    <div style={{ display: "flex", gap: "1rem", overflowX: "auto", paddingBottom: "0.5rem", scrollbarWidth: "none" }}>
             {books.slice(0, 8).map((b, i) => (
               <div key={b.id} style={{ minWidth: 130, flexShrink: 0, cursor: "pointer", animation: `fadeUp 0.5s ease ${i*60}ms both` }}>
-                <div style={{ width: 130, height: 190, borderRadius: 8, overflow: "hidden", marginBottom: "0.6rem", background: T.surface2, position: "relative" }}
-                  onMouseEnter={e => e.currentTarget.style.transform = "scale(1.04)"}
-                  onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-                  style={{ transition: "transform 0.2s" }}>
+                <div 
+                  onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.04)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+                  style={{ width: 130, height: 190, borderRadius: 8, overflow: "hidden", marginBottom: "0.6rem", background: T.surface2, position: "relative", transition: "transform 0.2s" }}>
                   <img src={b.cover} alt={b.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.target.style.display = "none"; }} />
                 </div>
                 <div style={{ fontWeight: 700, fontSize: "0.78rem", marginBottom: "0.1rem", lineHeight: 1.3 }}>{b.title}</div>
