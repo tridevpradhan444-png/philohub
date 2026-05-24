@@ -914,9 +914,6 @@ if (phase === "loading") return <div style={{ display: "flex", alignItems: "cent
   );
 }
 
-  );
-}
-
 function BoxUI({ d, onPick, T }) {
   const [hov, setHov] = useState(null);
   return (
