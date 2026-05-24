@@ -1120,5 +1120,51 @@ function FF({ label, value, onChange, placeholder, type = "text", T }) {
 }
 
 function NietAI({ T, darkMode, page, activeActivity }) {
-  return null;
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const endRef = useRef(null);
+  const pageContext = page === "activity" && activeActivity ? `User is viewing "${activeActivity.title}"` : `User is on the ${page} page of PhiloHub.`;
+  useEffect(() => { if (open && messages.length === 0) { setMessages([{ role: "ai", text: `Hey! I'm Niet 🤖 Ask me anything about philosophy!` }]); } }, [open]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  async function send() {
+    if (!input.trim() || loading) return;
+    const q = input.trim(); setInput("");
+    setMessages(prev => [...prev, { role: "user", text: q }]);
+    setLoading(true);
+    const res = await fetch("/api/niet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q, pageContext }) });
+    const data = await res.json();
+    setMessages(prev => [...prev, { role: "ai", text: data.text }]);
+    setLoading(false);
+  }
+  return (
+    <>
+      <button onClick={() => setOpen(!open)} style={{ position: "fixed", bottom: 20, right: 20, zIndex: 150, width: 56, height: 56, borderRadius: "50%", background: T.surface, border: `2px solid ${T.border}`, boxShadow: "0 4px 20px rgba(0,0,0,0.3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem", animation: open?"none":"float 3s ease infinite", transition: "all 0.2s" }}>🤖</button>
+      {open && (
+        <div style={{ position: "fixed", bottom: 84, right: 16, zIndex: 149, width: "min(360px,calc(100vw-32px))", background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, boxShadow: "0 8px 32px rgba(0,0,0,0.3)", overflow: "hidden" }}>
+          <div style={{ padding: "0.9rem 1rem", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: T.surface2 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: `${T.accent}20`, display: "flex", alignItems: "center", justifyContent: "center" }}>🤖</div>
+              <div><div style={{ fontWeight: 800, fontSize: "0.88rem" }}>Niet</div><div style={{ fontSize: "0.62rem", color: T.muted }}>Your philosophy guide</div></div>
+            </div>
+            <button onClick={() => setOpen(false)} style={{ background: "transparent", border: "none", color: T.muted, cursor: "pointer", fontSize: "1.1rem" }}>✕</button>
+          </div>
+          <div style={{ height: 260, overflowY: "auto", padding: "0.8rem" }}>
+            {messages.map((m, i) => (
+              <div key={i} style={{ marginBottom: "0.7rem", display: "flex", justifyContent: m.role==="user"?"flex-end":"flex-start" }}>
+                <div style={{ maxWidth: "85%", padding: "0.6rem 0.9rem", borderRadius: m.role==="user"?"12px 12px 2px 12px":"12px 12px 12px 2px", background: m.role==="user"?T.accent:T.surface2, color: m.role==="user"?"#0a0a0a":T.text, fontSize: "0.83rem", lineHeight: 1.6 }}>{m.text}</div>
+              </div>
+            ))}
+            {loading && <div style={{ display: "flex", gap: "0.3rem", padding: "0.4rem" }}>{[0,1,2].map(i => <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: T.muted }}/>)}</div>}
+            <div ref={endRef} />
+          </div>
+          <div style={{ padding: "0.7rem", borderTop: `1px solid ${T.border}`, display: "flex", gap: "0.5rem" }}>
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key==="Enter" && send()} placeholder="Ask Niet anything..." style={{ flex: 1, background: T.surface2, border: `1px solid ${T.border}`, borderRadius: 8, padding: "0.5rem 0.8rem", fontSize: "0.82rem", color: T.text, outline: "none", fontFamily: "inherit" }} />
+            <button onClick={send} disabled={loading} style={{ background: T.accent, color: "#0a0a0a", border: "none", borderRadius: 8, padding: "0.5rem 0.9rem", cursor: "pointer", fontWeight: 700 }}>→</button>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
