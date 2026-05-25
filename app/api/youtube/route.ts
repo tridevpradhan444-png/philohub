@@ -6,7 +6,7 @@ export async function GET(request) {
     const query = searchParams.get("q") || "philosophy explained";
     const maxResults = searchParams.get("maxResults") || "12";
 
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query + " philosophy")}&type=video&maxResults=${maxResults}&key=${process.env.YOUTUBE_API_KEY}&relevanceLanguage=en&safeSearch=moderate&order=viewCount`;
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=${maxResults}&key=${process.env.YOUTUBE_API_KEY}&relevanceLanguage=en&safeSearch=moderate&order=viewCount`;
 
     const response = await fetch(url);
     const data = await response.json();
