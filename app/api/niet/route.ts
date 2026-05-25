@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 
-export async function POST(request) {
+export async function POST(request: Request) {
   try {
     const { question, pageContext } = await request.json();
+
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return NextResponse.json({ text: "API key not configured. Please check environment variables." });
+    }
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -14,15 +18,20 @@ export async function POST(request) {
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
         max_tokens: 300,
-        system: `You are Niet, a friendly and wise AI assistant on PhiloHub — a philosophy platform for everyone. You explain philosophy simply, like talking to a curious 17-year-old. Keep answers concise (2-4 sentences). Be warm, direct, never condescending. Current page: ${pageContext}`,
+        system: `You are Niet, a friendly AI assistant on PhiloHub. Explain philosophy simply. Keep answers to 2-4 sentences. Current page: ${pageContext}`,
         messages: [{ role: "user", content: question }],
       }),
     });
 
+    if (!response.ok) {
+      const err = await response.json();
+      return NextResponse.json({ text: `API error: ${err?.error?.message || response.status}` });
+    }
+
     const data = await response.json();
-    const text = data.content?.[0]?.text || "I couldn't think of an answer right now. Try again?";
+    const text = data.content?.[0]?.text || "I couldn't think of an answer. Try again?";
     return NextResponse.json({ text });
-  } catch (error) {
-    return NextResponse.json({ text: "I'm having trouble connecting. Try again in a moment!" }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ text: `Error: ${error?.message || "Unknown error"}` });
   }
 }
