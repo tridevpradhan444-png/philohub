@@ -10,7 +10,7 @@ export async function GET(request) {
 
     const response = await fetch(url);
     const data = await response.json();
-    return NextResponse.json(data.items);
+    return NextResponse.json(items: data.items);
   } catch (error) {
     return NextResponse.json({ items: [] }, { status: 500 });
   }
